@@ -129,7 +129,7 @@ SetConsoleCursorInfo(hout, cursor_info);
 
 利用添头去尾来做到蛇的移动，将蛇的身体做成双向链表，在移动时把最后一个节点去掉并且在头结点前面新建一个头结点，看起来就像蛇移动了
 
-__[回到顶部](#贪吃蛇)__
+###__[回到顶部](#贪吃蛇)__
 ###截图：
 ![](https://github.com/TianLanhe/Others/raw/master/tanchishe/screenshot.png)
 ![](https://github.com/TianLanhe/Others/raw/master/tanchishe/screenshot2.png)
