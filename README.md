@@ -12,6 +12,7 @@ Q9：
 Q10：
 Q11：
 
+--------
 **Q1**：`scanf("%d",&i)`时输入float型或double会如何？  
 **A1**：读取失败，输入的数据留在输入缓冲区中，之后的scanf()不执行，需用`fflush(stdin)`刷新输入缓冲区
 
@@ -71,13 +72,37 @@ Q11：
 **A14**：C语言中下标引用"[]"只是指针算术运算的语法糖，即`a[0]`等价于`*(a+0)`，故`0[a]`等价于`*(0+a)`，两者指向同一地址，只是后者有些奇怪
 
 --------
-**Q15**：
-**A15**：
+**Q15**：二维数组动态分配？
+**A15**：有三种方法可以动态分配二维数组。  
+第一种：
+```c
+int **array,i;
+array=(int**)malloc(sizeof(int*)*m);
+for(i=0;i<m;i++)
+	array[i]=(int*)malloc(sizeof(int)*n);
+```
+第二种：
+```c
+int **array,i;
+array=(int**)malloc(sizeof(int*)*m);
+array[0]=(int*)malloc(sizeof(int*)*m*n);
+for(i=1;i<m;i++)
+	array[i]=array[0] + i*n;
+```
+第三种：
+```c
+int *array,i;
+int (*ptr)[n];
+array=(int*)malloc(sizeof(int*)*m*n);
+ptr=array;
+```
+第一种较为普遍，是离散分布的二维数组，第二种是连续分配的二维数组，第三种用指向数组的一维指针指向一维数组来模拟二维数组
 
 --------
-**Q16**：
-**A16**：
+**Q16**：为什么`sizeof('a')`等于2而不是1，当`sizeof(char)`却是1  
+**A16**：C语言中字符常量是int型而不是char型
 
 --------
-**Q17**：
-**A17**：
+**Q17**：`const char *p`和`char * const p`有什么区别？  
+**A17**：前者声明了一个指向字符常量的指针，因此不能改变p所指向的内容；后者声明了一个指向字符的指针常量，即不能改变p本身
+
