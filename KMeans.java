@@ -37,8 +37,8 @@ public class KMeans extends Configured{
         // 读取DistributedCache中的质心文件
         @Override
         public void setup(Context context){
-	        try{
-                Path []caches=DistributedCache.getLocalCacheFiles(context.getConfiguration());
+	    try{
+                URI []caches=DistributedCache.getCacheFiles(context.getConfiguration());
                 if(caches==null || caches.length<=0){
                     log.error("data文件不存在");
                     System.exit(1);
@@ -64,10 +64,10 @@ public class KMeans extends Configured{
                     for(int i=1;i<str.length;i++)
                         centers.get(index).arr[i-1]=Double.parseDouble(str[i]);
                 }
-	        }catch(IOException e){
-                log.error("出现异常");
-                System.exit(1);
-            }
+	    }catch(IOException e){
+	    	log.error("出现异常");
+		System.exit(1);
+	    }
         }
 
         @Override
@@ -118,18 +118,19 @@ public class KMeans extends Configured{
     }
  
     public static void main(String[] args) throws Exception {
-        if(args.length != 3){
-            log.error("Usage: InputDir CacheDir OutputDir");
-	        System.exit(1);
-	    }
+	if(args.length != 3){
+	    log.error("Usage: InputDir CacheDir OutputDir");
+	    System.exit(1);
+	}
 
         Configuration conf = new Configuration();
+        DistributedCache.addCacheFile(new URI(args[1]), conf);
         Job job=new Job(conf,"KMeans");
         job.setJarByClass(KMeans.class);
          
         FileInputFormat.setInputPaths(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
-        DistributedCache.addCacheFile(new URI(args[1]), conf);
+        
          
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
