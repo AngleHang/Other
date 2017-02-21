@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Vector;
+import java.net.URI;
  
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,7 +27,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
  
 public class KMeans extends Configured{
-    private static final Log log = LogFactory.getLog(KMeans2.class);
+    private static final Log log = LogFactory.getLog(KMeans.class);
  
     private static final int K = 10;                //质心个数
      
@@ -36,31 +37,36 @@ public class KMeans extends Configured{
         // 读取DistributedCache中的质心文件
         @Override
         public void setup(Context context){
-            Path []caches=DistributedCache.getLocalCacheFiles(context.getConfiguration());
-            if(caches==null || caches.length<=0){
-                log.error("data文件不存在");
+	        try{
+                Path []caches=DistributedCache.getLocalCacheFiles(context.getConfiguration());
+                if(caches==null || caches.length<=0){
+                    log.error("data文件不存在");
+                    System.exit(1);
+                }
+                BufferedReader br=new BufferedReader(new FileReader(caches[0].toString()));
+
+                for (int i = 0; i < K; i++)
+                    centers.add(new Sample());
+
+                String line;
+                while((line=br.readLine())!=null){
+                    String []str=line.split("\\s+");
+                    if(str.length!=Sample.DIMENTION+1){
+                        log.error("读入centers时维度不对");
+                        System.exit(1);
+                    }
+
+                    int index=Integer.parseInt(str[0]);
+                    if(index < 0 && index > 9){
+                        log.error("质心编号错误");
+                        System.exit(1);
+                    }
+                    for(int i=1;i<str.length;i++)
+                        centers.get(index).arr[i-1]=Double.parseDouble(str[i]);
+                }
+	        }catch(IOException e){
+                log.error("出现异常");
                 System.exit(1);
-            }
-            BufferedReader br=new BufferedReader(new FileReader(caches[0].toString()));
-
-            for (int i = 0; i < K; i++)
-                centers.add(new Sample());
-
-            String line;
-            while((line=br.readLine())!=null){
-                String []str=line.split("\\s+");
-                if(str.length!=Sample.DIMENTION+1){
-                    log.error("读入centers时维度不对");
-                    System.exit(1);
-                }
-
-                int index=Integer.parseInt(str[0]);
-                if(index < 0 && index > 9){
-                    log.error("质心编号错误");
-                    System.exit(1);
-                }
-                for(int i=1;i<str.length;i++)
-                    centers.get(index).arr[i-1]=Double.parseDouble(str[i]);
             }
         }
 
@@ -80,7 +86,7 @@ public class KMeans extends Configured{
             int index = -1;
             double minDist=Double.MAX_VALUE;
             for(int i=0;i<K;++i){
-                double dist = Sample.getEulerDist(sample,centers[i]);
+                double dist = Sample.getEulerDist(sample,centers.get(i));
                 if(dist < minDist){
                     minDist = dist;
                     index = i;
@@ -112,12 +118,17 @@ public class KMeans extends Configured{
     }
  
     public static void main(String[] args) throws Exception {
+        if(args.length != 3){
+            log.error("Usage: InputDir CacheDir OutputDir");
+	        System.exit(1);
+	    }
+
         Configuration conf = new Configuration();
         Job job=new Job(conf,"KMeans");
         job.setJarByClass(KMeans.class);
          
-        FileInputFormat.setInputPaths(job, args[0]);
-        FileOutputFormat.setOutputPath(job, args[2]);
+        FileInputFormat.setInputPaths(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[2]));
         DistributedCache.addCacheFile(new URI(args[1]), conf);
          
         job.setInputFormatClass(TextInputFormat.class);
